@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StackLens AI
 
-## Getting Started
+**Understand any codebase in minutes with AI.**
 
-First, run the development server:
+StackLens AI is a production-focused Dev + AI SaaS platform that analyzes GitHub repositories and generates structured, AI-powered explanations of entire codebases.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+It helps developers, students, freelancers, and open-source contributors quickly understand unfamiliar projects without manually reading thousands of lines of code.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Core Idea
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Paste a GitHub repository → StackLens AI analyzes the project → AI returns a structured explanation including architecture, tech stack, data flow, and onboarding steps.
 
-## Learn More
+This is NOT a website builder.  
+This is NOT a code generator.  
+This is an AI-powered codebase understanding platform.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎯 MVP Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 🔐 Authentication (Supabase Auth)
+- 📊 User Dashboard
+- 🔍 Repository Analysis (Public + Private GitHub repos)
+- 🤖 AI-generated structured breakdown of codebases
+- 🧠 JSON-based architecture explanation
+- 🌙 Modern SaaS UI (Next.js + Tailwind + shadcn)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🧰 Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Frontend
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Framer Motion
+
+### Backend
+- Supabase (Postgres + Auth)
+
+### AI
+- Gemini / OpenAI API (structured JSON output)
+
+### Integrations
+- GitHub REST API
+- GitHub OAuth (planned)
+
+---
+
+## 🧠 AI Output Includes
+
+- Project overview
+- Tech stack identification
+- Folder structure explanation
+- Important files
+- Data flow explanation
+- Onboarding steps for developers
+- Potential risks & architecture notes
+
+---
+
+## 🏗 Architecture
+
+User logs in →  
+Inputs GitHub repo →  
+Server fetches repo metadata →  
+AI analyzes codebase →  
+Structured JSON stored in DB →  
+Dashboard renders clean breakdown.
+
+---
+
+## 🎨 UI Philosophy
+
+- Modern SaaS feel
+- Dark theme first
+- Clean developer aesthetic
+- Smooth animations
+- Minimal but premium
+
+---
+
+## 🚀 Future Roadmap
+
+- Repo health score
+- Code complexity analysis
+- Visual architecture diagrams
+- Export to PDF
+- GitHub App integration
+- Team collaboration
+- Chrome extension
+
+---
+
+## 🛠 Status
+
+Currently in MVP development phase.
+
+---
+
+## 👨‍💻 Author
+
+Built as a flagship full-stack + AI portfolio project.
