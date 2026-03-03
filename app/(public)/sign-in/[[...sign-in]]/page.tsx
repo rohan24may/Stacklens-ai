@@ -1,33 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function SignInPage() {
   const { isLoaded, signIn } = useSignIn();
-  const { signUp } = useSignUp();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleEmailAuth = async (type: "login" | "signup") => {
+  const handleLogin = async () => {
     if (!isLoaded) return;
 
     try {
-      if (type === "signup") {
-        await signUp?.create({
-          emailAddress: email,
-          password,
-        });
-      } else {
-        await signIn?.create({
-          identifier: email,
-          password,
-        });
-      }
+      await signIn.create({
+        identifier: email,
+        password,
+      });
 
       router.push("/dashboard");
     } catch (err) {
@@ -35,11 +27,11 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleOAuth = async (provider: "google" | "github") => {
     if (!isLoaded) return;
 
-    await signIn?.authenticateWithRedirect({
-      strategy: "oauth_google",
+    await signIn.authenticateWithRedirect({
+      strategy: `oauth_${provider}`,
       redirectUrl: "/dashboard",
       redirectUrlComplete: "/dashboard",
     });
@@ -48,11 +40,13 @@ export default function SignInPage() {
   return (
     <div className="relative min-h-screen bg-[#0a0a0c] text-white overflow-hidden">
 
+      {/* Background Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(120,119,198,0.15),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.15),transparent_40%)] animate-pulse" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 min-h-screen">
 
+        {/* LEFT SIDE */}
         <div className="hidden md:flex flex-col justify-center px-24">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -74,6 +68,7 @@ export default function SignInPage() {
           </motion.div>
         </div>
 
+        {/* RIGHT SIDE */}
         <div className="flex items-center justify-center px-6">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -103,17 +98,10 @@ export default function SignInPage() {
               />
 
               <button
-                onClick={() => handleEmailAuth("login")}
+                onClick={handleLogin}
                 className="w-full py-3 rounded-xl font-medium bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-purple-500/20"
               >
                 Login
-              </button>
-
-              <button
-                onClick={() => handleEmailAuth("signup")}
-                className="w-full py-3 rounded-xl bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 transition-all duration-200"
-              >
-                Create Account
               </button>
 
               <div className="relative my-6">
@@ -126,11 +114,25 @@ export default function SignInPage() {
               </div>
 
               <button
-                onClick={handleGoogleLogin}
+                onClick={() => handleOAuth("google")}
                 className="w-full py-3 rounded-xl bg-[#111113] border border-neutral-700 hover:bg-neutral-800 transition-all duration-200"
               >
-                Google
+                Continue with Google
               </button>
+
+              <button
+                onClick={() => handleOAuth("github")}
+                className="w-full py-3 rounded-xl bg-[#111113] border border-neutral-700 hover:bg-neutral-800 transition-all duration-200"
+              >
+                Continue with GitHub
+              </button>
+
+              <p className="text-sm text-neutral-500 mt-6">
+                Don’t have an account?{" "}
+                <a href="/sign-up" className="text-purple-400 hover:underline">
+                  Sign up
+                </a>
+              </p>
             </div>
           </motion.div>
         </div>
