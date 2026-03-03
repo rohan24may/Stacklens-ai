@@ -1,43 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
-export default function AuthPage() {
+export default function SignInPage() {
+  const { isLoaded, signIn } = useSignIn();
+  const { signUp } = useSignUp();
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleEmailAuth = async (type: "login" | "signup") => {
-    if (type === "signup") {
-      await supabase.auth.signUp({ email, password });
-    } else {
-      await supabase.auth.signInWithPassword({ email, password });
+    if (!isLoaded) return;
+
+    try {
+      if (type === "signup") {
+        await signUp?.create({
+          emailAddress: email,
+          password,
+        });
+      } else {
+        await signIn?.create({
+          identifier: email,
+          password,
+        });
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
     }
-    window.location.href = "/dashboard";
   };
 
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "http://localhost:3000/dashboard",
-      },
+    if (!isLoaded) return;
+
+    await signIn?.authenticateWithRedirect({
+      strategy: "oauth_google",
+      redirectUrl: "/dashboard",
+      redirectUrlComplete: "/dashboard",
     });
   };
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0c] text-white overflow-hidden">
 
-      {/* Animated Gradient Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(120,119,198,0.15),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.15),transparent_40%)] animate-pulse" />
-
-      {/* Subtle Grid Texture */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 min-h-screen">
 
-        {/* LEFT SIDE */}
         <div className="hidden md:flex flex-col justify-center px-24">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -59,7 +74,6 @@ export default function AuthPage() {
           </motion.div>
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="flex items-center justify-center px-6">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -72,7 +86,6 @@ export default function AuthPage() {
             </h2>
 
             <div className="space-y-5">
-
               <input
                 type="email"
                 placeholder="Email"
