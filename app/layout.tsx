@@ -8,8 +8,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body>{children}</body>
+      <html lang="en" >
+        <body className="bg-black text-white">{children}</body>
       </html>
     </ClerkProvider>
   );
