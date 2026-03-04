@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { BackgroundBeams } from "@/components/ui/background-beams";
+import WrapButton from "../ui/wrap-button";
 
 
 export default function Hero() {
   return (
-    <section className="relative flex flex-col items-center justify-center text-center px-6 pt-40 pb-24">
-<BackgroundBeams />
+    <><section className="relative flex flex-col items-center justify-center text-center  pt-40 ">
+      <BackgroundBeams />
       {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] pointer-events-none"></div>
 
@@ -25,26 +25,9 @@ export default function Hero() {
         tech stack, folder structure, and data flow instantly so developers
         can understand any project faster.
       </p>
-
-      {/* CTA Buttons */}
-      <div className="mt-10 flex items-center gap-4">
-
-        <Link
-          href="/sign-up"
-          className="bg-white text-black px-6 py-3 rounded-full font-medium text-sm hover:bg-gray-200 transition"
-        >
-          Get Started
-        </Link>
-
-        <Link
-          href="/dashboard"
-          className="border border-white/10 px-6 py-3 rounded-full text-sm hover:bg-white/5 transition"
-        >
-          View Demo
-        </Link>
-
-      </div>
-
-    </section>
+    </section><WrapButton className="mt-6" href="/dashboard">
+  Analyze Repository
+</WrapButton>
+</>
   );
 }
