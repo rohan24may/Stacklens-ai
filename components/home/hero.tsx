@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+
 
 export default function Hero() {
   return (
     <section className="relative flex flex-col items-center justify-center text-center px-6 pt-40 pb-24">
-
+<BackgroundBeams />
       {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] pointer-events-none"></div>
 
