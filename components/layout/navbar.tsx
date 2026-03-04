@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function Navbar() {
   return (
@@ -45,15 +46,18 @@ export default function Navbar() {
             Contact
           </button>
 
-<Link
-  href="/sign-up"
-className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_16px_rgba(255,255,255,0.3)] transition"
->
-  Get Started
-</Link>
+<SignedOut>
+  <Link
+    href="/sign-up"
+    className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_16px_rgba(255,255,255,0.3)] transition"
+  >
+    Get Started
+  </Link>
+</SignedOut>
 
-          <UserButton afterSignOutUrl="/" />
-
+<SignedIn>
+  <UserButton afterSignOutUrl="/" />
+</SignedIn>
         </div>
 
       </nav>
