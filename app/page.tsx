@@ -7,6 +7,8 @@ import CTA from "@/components/home/cta"
 import Footer from "@/components/home/footer"
 import Links from "@/components/home/Links"
 import Line from "@/components/home/Line"
+import Testimonial from "@/components/home/Testimonial"
+import Marquee from "@/components/home/Marquee"
 
 export default function HomePage() {
   return (
@@ -20,12 +22,15 @@ export default function HomePage() {
 
       <Features />
 
+      <Testimonial />
+
       <HowItWorks />
 
       <CTA />
       
       <Links />
-      
+
+      <Marquee />
 
       <Footer />
 
