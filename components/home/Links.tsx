@@ -126,7 +126,7 @@ const Links = () => {
               className="text-4xl font-[poppins] capitalize text-center md:text-6xl font-black"
             >
 Explore the ecosystem behind{' '}
-<span className="text-amber-300">StackLens AI</span>
+<span className="text-blue-400">StackLens AI</span>
             </span>
             <p className="font-mono text-xs md:text-lg text-center mt-1">
               Follow the development journey and connect with the creator.

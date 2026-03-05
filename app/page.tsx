@@ -27,10 +27,10 @@ export default function HomePage() {
       <HowItWorks />
 
       <CTA />
+
+       <Marquee />
       
       <Links />
-
-      <Marquee />
 
       <Footer />
 

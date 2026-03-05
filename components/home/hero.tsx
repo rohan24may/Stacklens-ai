@@ -25,7 +25,7 @@ export default function Hero() {
         tech stack, folder structure, and data flow instantly so developers
         can understand any project faster.
       </p>
-    </section><WrapButton className="mt-6" href="/dashboard">
+    </section><WrapButton className="mt-6 cursor-pointer" href="/dashboard">
   Analyze Repository
 </WrapButton>
 </>
