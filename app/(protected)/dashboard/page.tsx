@@ -1,14 +1,8 @@
-import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-
-export const dynamic = "force-dynamic";
-
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-
+export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-3xl font-semibold">
-        Welcome {user?.email}
+    <div>
+      <h1 className="text-2xl font-semibold">
+        Dashboard
       </h1>
     </div>
   );
