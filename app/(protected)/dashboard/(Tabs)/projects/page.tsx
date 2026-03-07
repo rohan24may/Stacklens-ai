@@ -50,14 +50,14 @@ export default function ProjectsPage() {
 
   <Link
     href="/dashboard/analyze"
-    className="w-48 text-center py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-base font-semibold hover:opacity-90 transition shadow-lg shadow-purple-500/10"
+    className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-base font-semibold hover:opacity-90 transition shadow-lg shadow-purple-500/10"
   >
     Analyze Repository
   </Link>
 
   <Link
     href="/dashboard/architect"
-    className="w-48 text-center py-3 rounded-xl border border-[#1a1a1a] bg-black/40 text-base font-medium hover:border-purple-500 hover:bg-black/60 transition"
+    className="px-8 py-3 rounded-xl border border-[#1a1a1a] bg-black/40 text-base font-medium hover:border-purple-500 hover:bg-black/60 transition"
   >
     Architect Project
   </Link>

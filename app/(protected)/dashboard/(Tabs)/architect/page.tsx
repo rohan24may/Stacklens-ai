@@ -44,7 +44,7 @@ export default function ArchitectPage() {
 
       <div>
         <h1 className="text-2xl font-semibold">
-          Architect a New Project
+              Architect a New Project
         </h1>
 
         <p className="text-sm text-zinc-400 mt-1">
@@ -117,15 +117,15 @@ export default function ArchitectPage() {
 
       </div>
 
-      {/* Generate Button */}
+{/* Generate Button */}
 
-      <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition">
+<button className="mt-6 flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition">
 
-        <Sparkles size={16} />
+  <Sparkles size={16} />
 
-        Generate Architecture
+  Generate Architecture
 
-      </button>
+</button>
 
     </div>
   )

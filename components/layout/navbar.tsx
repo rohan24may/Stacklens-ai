@@ -29,11 +29,14 @@ export default function Navbar() {
             Dashboard
           </Link>
 
-          <Link href="/analyze" className="hover:text-gray-300">
+          <Link href="/dashboard/analyze" className="hover:text-gray-300">
             Analyze
           </Link>
+          <Link href="/dashboard/architect" className="hover:text-gray-300">
+            Architect
+          </Link>
 
-          <Link href="/docs" className="hover:text-gray-300">
+          <Link href="/dashboard/docs" className="hover:text-gray-300">
             Docs
           </Link>
 
