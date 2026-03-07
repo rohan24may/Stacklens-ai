@@ -1,36 +1,33 @@
-import Sidebar from "@/components/dashboard/sidebar";
-import Navbar from "@/components/dashboard/navbar";
+import Sidebar from "@/components/dashboard/sidebar"
+import Navbar from "@/components/dashboard/navbar"
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <div className="h-screen w-full bg-black text-white flex overflow-hidden">
-      
-      {/* Sidebar */}
-      <div className="w-64 border-r border-white/10 bg-black">
-        <Sidebar />
-      </div>
+<div className="flex h-screen text-white relative bg-[#050505]">
 
-      {/* Main Area */}
-      <div className="flex flex-1 flex-col">
+  {/* background glow */}
 
-        {/* Top Navbar */}
-        <div className="h-16 border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-50">
-          <Navbar />
-        </div>
+  <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute top-40 left-40 w-[500px] h-[500px] bg-purple-600/20 blur-[200px]" />
+    <div className="absolute bottom-40 right-40 w-[500px] h-[500px] bg-cyan-600/20 blur-[200px]" />
+  </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-black to-neutral-950">
-          <div className="p-8 max-w-7xl mx-auto w-full">
-            {children}
-          </div>
-        </div>
+  <Sidebar />
 
-      </div>
+  <div className="flex flex-col flex-1 relative">
 
-    </div>
-  );
+    <Navbar />
+
+    <main className="flex-1 overflow-y-auto p-10">
+      {children}
+    </main>
+
+  </div>
+
+</div>
+  )
 }

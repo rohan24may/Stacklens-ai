@@ -1,56 +1,49 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { motion } from "framer-motion"
 import {
   LayoutDashboard,
-  Search,
+  Github,
   Sparkles,
   Folder,
   BookOpen,
-  Settings,
-} from "lucide-react";
+  Settings
+} from "lucide-react"
 
-const links = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Analyze Repo", href: "/dashboard/analyze", icon: Search },
-  { name: "Architect", href: "/dashboard/architect", icon: Sparkles },
-  { name: "Projects", href: "/dashboard/projects", icon: Folder },
-  { name: "Docs", href: "/dashboard/docs", icon: BookOpen },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+const nav = [
+  { name: "Dashboard", icon: LayoutDashboard },
+  { name: "Analyze Repo", icon: Github },
+  { name: "Architect Project", icon: Sparkles },
+  { name: "Projects", icon: Folder },
+  { name: "Docs", icon: BookOpen },
+  { name: "Settings", icon: Settings },
+]
 
 export default function Sidebar() {
-  const pathname = usePathname();
-
   return (
-    <header className="flex items-center justify-between border-b border-white/10 px-8 py-4 bg-black">
-      <div className="p-6 text-lg font-semibold">
+    <aside className="w-64 border-r border-[#1a1a1a] bg-[#0e0e0e]/60 backdrop-blur-xl">
+
+      <div className="p-6 text-xl font-semibold tracking-tight">
         StackLens
       </div>
 
-      <nav className="space-y-2 px-4">
-        {links.map((link) => {
-          const Icon = link.icon;
-          const active = pathname === link.href;
+      <nav className="space-y-1 px-3">
+
+        {nav.map((item, i) => {
+          const Icon = item.icon
 
           return (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition
-              ${
-                active
-                  ? "bg-blue-500/10 text-blue-400"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
-              }`}
+            <motion.div
+              key={i}
+              whileHover={{ x: 4 }}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 cursor-pointer transition"
             >
               <Icon size={18} />
-              {link.name}
-            </Link>
-          );
+              {item.name}
+            </motion.div>
+          )
         })}
       </nav>
-    </header>
-  );
+    </aside>
+  )
 }
