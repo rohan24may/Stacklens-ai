@@ -1,9 +1,14 @@
-import React from 'react'
+import RepoInput from "@/components/analyze/repo-input"
 
-const page = () => {
+
+export default function AnalyzePage() {
   return (
-    <div>page</div>
+    <div className="max-w-4xl mx-auto space-y-6">
+
+      <RepoInput />
+
+ 
+
+    </div>
   )
 }
-
-export default page
