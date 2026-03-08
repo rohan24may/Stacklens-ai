@@ -1,6 +1,7 @@
 "use client"
 
 import { Github } from "lucide-react"
+import Link from "next/link";
 
 export default function RepoInput() {
   return (
@@ -25,9 +26,12 @@ export default function RepoInput() {
           className="flex-1 bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-sm outline-none focus:border-purple-500"
         />
 
-        <button className="px-5 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition">
-          Analyze
-        </button>
+  <Link
+  href={`/dashboard/analyze?repo=${encodeURIComponent(project.repo_url)}`}
+  className="px-5 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition"
+>
+  Analyze
+</Link>
 
       </div>
 

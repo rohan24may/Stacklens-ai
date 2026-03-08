@@ -18,7 +18,6 @@ const nav = [
   { name: "Analyze Repo", icon: Github, href: "/dashboard/analyze" },
   { name: "Architect Project", icon: Sparkles, href: "/dashboard/architect" },
   { name: "Projects", icon: Folder, href: "/dashboard/projects" },
-  { name: "Docs", icon: BookOpen, href: "/dashboard/docs" },
   { name: "Settings", icon: Settings, href: "/dashboard/settings" },
 ]
 export default function Sidebar() {
