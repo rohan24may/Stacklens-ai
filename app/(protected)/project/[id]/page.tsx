@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
+import { getRepoData } from "@/lib/github";
+import { analyzeRepository } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,11 @@ export default async function ProjectPage({
 
   if (!project || error) return notFound();
 
+  const repoData = await getRepoData(project.repo_url);
+
+  const analysis = await analyzeRepository(repoData);
+
+  console.log("AI RESULT:", analysis);
 return (
   <div className="min-h-screen bg-[#0b0b0b] text-white">
 

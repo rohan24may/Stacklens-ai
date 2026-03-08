@@ -1,9 +1,28 @@
 "use client"
 
 import { Github } from "lucide-react"
-import Link from "next/link";
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function RepoInput() {
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [repo, setRepo] = useState("")
+
+  useEffect(() => {
+    const repoParam = searchParams.get("repo")
+    if (repoParam) {
+      setRepo(repoParam)
+    }
+  }, [searchParams])
+
+  const handleAnalyze = () => {
+    if (!repo) return
+    router.push(`/dashboard/analyze?repo=${encodeURIComponent(repo)}`)
+  }
+
   return (
     <div className="border border-[#1a1a1a] rounded-xl p-6 bg-[#0e0e0e]">
 
@@ -22,16 +41,18 @@ export default function RepoInput() {
       <div className="flex gap-3">
 
         <input
+          value={repo}
+          onChange={(e) => setRepo(e.target.value)}
           placeholder="https://github.com/user/repository"
           className="flex-1 bg-black/40 border border-[#1a1a1a] rounded-lg px-4 py-3 text-sm outline-none focus:border-purple-500"
         />
 
-  <Link
-  href={`/dashboard/analyze?repo=${encodeURIComponent(project.repo_url)}`}
-  className="px-5 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition"
->
-  Analyze
-</Link>
+        <button
+          onClick={handleAnalyze}
+          className="px-5 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:opacity-90 transition"
+        >
+          Analyze
+        </button>
 
       </div>
 
