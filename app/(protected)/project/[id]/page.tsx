@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getRepoData } from "@/lib/github";
 import { analyzeRepository } from "@/lib/ai";
 
+
 export const dynamic = "force-dynamic";
 
 export default async function ProjectPage({
@@ -28,7 +29,26 @@ export default async function ProjectPage({
     .eq("user_id", userId)
     .single();
 
-  if (!project || error) return notFound();
+  if (project.status === "processing") {
+  const repoData = await getRepoData(project.repo_url);
+
+  const analysis = await analyzeRepository(repoData);
+
+  // save AI output
+  await supabase.from("ai_outputs").insert({
+    project_id: project.id,
+    output_type: "repo_analysis",
+    ai_output_json: analysis,
+  });
+
+  // update project status
+  await supabase
+    .from("projects")
+    .update({ status: "completed" })
+    .eq("id", project.id);
+
+  console.log("AI RESULT SAVED");
+}
 
   const repoData = await getRepoData(project.repo_url);
 

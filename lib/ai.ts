@@ -1,40 +1,39 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
 export async function analyzeRepository(repoData: any) {
-  const prompt = `
-You are a senior software architect.
+  const deps = {
+    ...repoData.dependencies,
+    ...repoData.devDependencies,
+  };
 
-Analyze the following GitHub repository data and explain:
+  const techStack: string[] = [];
 
-1. Tech stack
-2. Architecture overview
-3. Key modules
-4. Short summary
+  if (deps.next) techStack.push("Next.js");
+  if (deps.react) techStack.push("React");
+  if (deps.vue) techStack.push("Vue");
+  if (deps.express) techStack.push("Express");
+  if (deps.tailwindcss) techStack.push("Tailwind CSS");
+  if (deps.prisma) techStack.push("Prisma");
+  if (deps.mongodb) techStack.push("MongoDB");
+  if (deps.pg || deps.postgres) techStack.push("PostgreSQL");
 
-Repository Data:
-${JSON.stringify(repoData, null, 2)}
-`;
+  const architecture =
+    repoData.files?.some((f: string) => f.startsWith("app/"))
+      ? "App Router architecture (Next.js)"
+      : repoData.files?.some((f: string) => f.startsWith("pages/"))
+      ? "Pages Router architecture (Next.js)"
+      : "Standard Node/Frontend project structure";
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content: "You analyze software repositories.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    temperature: 0.2,
-  });
+  const keyModules = repoData.files
+    ?.filter((f: string) =>
+      ["app/", "pages/", "components/", "lib/", "src/"].some((p) =>
+        f.startsWith(p)
+      )
+    )
+    .slice(0, 10);
 
-  const output = response.choices[0].message.content;
-
-  return output;
+  return {
+    techStack,
+    architecture,
+    keyModules,
+    summary: `Repository built with ${techStack.join(", ") || "various tools"}.`,
+  };
 }

@@ -3,6 +3,7 @@
 import { Github } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { createProject } from "@/actions/project.action";
 
 export default function RepoInput() {
 
@@ -18,11 +19,11 @@ export default function RepoInput() {
     }
   }, [searchParams])
 
-  const handleAnalyze = () => {
-    if (!repo) return
-    router.push(`/dashboard/analyze?repo=${encodeURIComponent(repo)}`)
-  }
+const handleAnalyze = async () => {
+  if (!repo) return;
 
+  await createProject(repo);
+};
   return (
     <div className="border border-[#1a1a1a] rounded-xl p-6 bg-[#0e0e0e]">
 
