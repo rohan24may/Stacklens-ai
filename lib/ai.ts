@@ -37,3 +37,25 @@ export async function analyzeRepository(repoData: any) {
     summary: `Repository built with ${techStack.join(", ") || "various tools"}.`,
   };
 }
+
+export function answerQuestion(question: string, ctx: any) {
+  const q = question.toLowerCase();
+
+  if (q.includes("tech")) {
+    return `Tech Stack: ${ctx.techStack.join(", ")}`;
+  }
+
+  if (q.includes("architecture")) {
+    return ctx.architecture;
+  }
+
+  if (q.includes("modules") || q.includes("structure")) {
+    return `Key Modules: ${ctx.keyModules.join(", ")}`;
+  }
+
+  if (q.includes("summary") || q.includes("about")) {
+    return ctx.summary;
+  }
+
+  return "I can answer about tech stack, architecture, or structure.";
+}
