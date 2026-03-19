@@ -34,5 +34,4 @@ export async function createProject(repoUrl: string) {
     throw error;
   }
 
-  redirect(`/project/${data.id}`);
 }
