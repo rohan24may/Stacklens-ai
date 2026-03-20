@@ -61,19 +61,20 @@ const router = useRouter();
       .from("projects")
       .select("*")
       .eq("id", projectIdFromUrl)
-      .single();
+      .maybeSingle();
 
-    if (project) {
-      loadProject(project);
+if (project && project.id !== projectId) {
+  loadProject(project);
+
     }
   };
 
   loadFromUrl();
-}, [projectIdFromUrl]);
+}, [projectIdFromUrl, projectId]);
 
   // ✅ Load project
   const loadProject = async (project: any) => {
-    router.push(`/dashboard/analyze/${project.id}`);
+    
     setProjectId(project.id);
     setStarted(true);
     setTimeout(() => {
@@ -85,7 +86,7 @@ const router = useRouter();
       .from("ai_outputs")
       .select("*")
       .eq("project_id", project.id)
-      .single();
+      .maybeSingle()
 
     setAnalysis(aiData?.ai_output_json);
 
@@ -144,7 +145,7 @@ setMessages([
     });
 
     const apiData: any = await res.json();
-
+console.log("API DATA:", apiData);
     // create project
 const { data: projectData, error } = await supabase
   .from("projects")
@@ -160,48 +161,52 @@ const { data: projectData, error } = await supabase
 
 console.log("INSERT RESULT:", projectData, error);
 
-    const project = projectData?.[0];
+  const project = projectData?.[0];
 
-    if (project) {
-      router.push(`/dashboard/analyze/${project.id}`);
-      
-      setProjectId(project.id);
+if (project) {
+  setProjectId(project.id);
 
-      setProjects((prev) => {
-        const exists = prev.find((p) => p.id === project.id);
-        if (exists) return prev;
-        return [project, ...prev];
-      });
-    }
+  setProjects((prev) => {
+    const exists = prev.find((p) => p.id === project.id);
+    if (exists) return prev;
+    return [project, ...prev];
+  });
+}
 
-    setAnalysis(apiData.data);
+const result = apiData.data || apiData;
+setAnalysis(result);
 
-    // save analysis
-    if (project?.id) {
-      await supabase.from("ai_outputs").insert({
-        project_id: project.id,
-        output_type: "analysis",
-        ai_output_json: apiData.data,
-      });
-    }
+// save analysis
+if (project?.id) {
+  await supabase.from("ai_outputs").insert([
+    {
+      project_id: project.id,
+      output_type: "analysis",
+      ai_output_json: result,
+    },
+  ]);
+}
 
-    // stream response
-    setMessages([{ role: "assistant", content: "" }]);
 
-    await streamText(
-      `🚀 Analysis Complete\n\n${apiData.data.summary}\n\nTech Stack: ${apiData.data.techStack.join(
-        ", "
-      )}\n\nArchitecture: ${
-        apiData.data.architecture
-      }\n\nKey Modules: ${apiData.data.keyModules.join(", ")}`
-    );
 
-    // save message
+await streamText(
+  `🚀 Analysis Complete\n\n${result.summary || "No summary"}\n\nTech Stack: ${
+    Array.isArray(result.techStack)
+      ? result.techStack.join(", ")
+      : result.techStack || "N/A"
+  }\n\nArchitecture: ${
+    result.architecture || "N/A"
+  }\n\nKey Modules: ${
+    Array.isArray(result.keyModules)
+      ? result.keyModules.join(", ")
+      : result.keyModules || "N/A"
+  }`
+); // save message
     if (project?.id) {
       await supabase.from("project_messages").insert({
         project_id: project.id,
         role: "assistant",
-        message: JSON.stringify(apiData.data),
+       message: JSON.stringify(result), 
       });
     }
 
@@ -251,14 +256,16 @@ setMessages((prev) => [
 
 // NEW CHAT
 const startNewChat = () => {
-  // reset everything instantly
+  // reset state
   setProjectId(null);
   setMessages([]);
   setAnalysis(null);
   setRepo("");
-  setStarted(false); // (no delay)
+  setStarted(false);
 
-  // focus input after reset
+  router.push("/dashboard/analyze");
+
+  // focus
   setTimeout(() => {
     inputRef.current?.focus();
   }, 50);

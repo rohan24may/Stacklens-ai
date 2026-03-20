@@ -7,5 +7,5 @@ export default function ProjectPage() {
   const params = useParams();
   const id = params.id as string;
 
-  return <AnalyzePage projectIdFromUrl={id} />;
+  return <AnalyzePage key={id} projectIdFromUrl={id} />;
 }
