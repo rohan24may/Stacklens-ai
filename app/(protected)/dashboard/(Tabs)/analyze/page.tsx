@@ -1,11 +1,9 @@
 "use client";
 
 import { Github } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/db/supabase";
-import { useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
-import { useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 
 export default function AnalyzePage() {
@@ -19,57 +17,66 @@ export default function AnalyzePage() {
   const [projects, setProjects] = useState<any[]>([]);
   const bottomRef = useRef<any>(null);
   const { user } = useUser();
-  
-  
-useEffect(() => {
-  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const tryParseJSON = (str: string) => {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return str;
-    
-  }
-};
-
-useEffect(() => {
-  const load = async () => {
-    const { data } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    console.log("PROJECTS:", data); 
-
-    setProjects(data || []);
+    try {
+      return JSON.parse(str);
+    } catch {
+      return str;
+    }
   };
 
-  load();
-}, []);
+  // ✅ Load projects
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-const loadProject = async (project: any) => {
-  setProjectId(project.id);
-  setStarted(true);
+      setProjects(data || []);
+    };
 
-  const { data } = await supabase
-    .from("project_messages")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: true });
+    load();
+  }, []);
 
-setMessages(
-  data.map((m: any) => ({
-    role: m.role,
-    content:
-      m.role === "assistant"
-        ? tryParseJSON(m.message)
-        : m.message,
-  }))
-);
-};
-  /* ================= STREAMING ================= */
+  // ✅ Load project
+  const loadProject = async (project: any) => {
+    setProjectId(project.id);
+    setStarted(true);
+
+    // load analysis
+    const { data: aiData } = await supabase
+      .from("ai_outputs")
+      .select("*")
+      .eq("project_id", project.id)
+      .single();
+
+    setAnalysis(aiData?.ai_output_json);
+
+    // load messages
+    const { data } = await supabase
+      .from("project_messages")
+      .select("*")
+      .eq("project_id", project.id)
+      .order("created_at", { ascending: true });
+
+    setMessages(
+      (data || []).map((m: any) => ({
+        role: m.role,
+        content:
+          m.role === "assistant"
+            ? tryParseJSON(m.message)
+            : m.message,
+      }))
+    );
+  };
+
+  // ✅ Streaming
   const streamText = async (text: string) => {
     let current = "";
 
@@ -89,139 +96,167 @@ setMessages(
     }
   };
 
-  /* ================= ANALYZE ================= */
-const handleAnalyze = async () => {
-  if (!repo) return;
+  // ✅ Analyze
+  const handleAnalyze = async () => {
+    if (!repo) return;
 
-  setStarted(true);
-  setLoading(true);
+    setStarted(true);
+    setLoading(true);
 
-  setMessages([
-    {
-      role: "assistant",
-      content: "Analyzing repository...",
-    },
-  ]);
+    setMessages([
+      { role: "assistant", content: "Analyzing repository..." },
+    ]);
 
-  // 🔹 1. Call analysis API
-  const res = await fetch("/api/analyze", {
-    method: "POST",
-    body: JSON.stringify({ repoUrl: repo }),
-  });
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      body: JSON.stringify({ repoUrl: repo }),
+    });
 
-  const apiData: any = await res.json(); // ✅ renamed
+    const apiData: any = await res.json();
 
-  // 🔹 2. Create project (FIXED)
+    // create project
 const { data: projectData, error } = await supabase
   .from("projects")
   .insert([
     {
-      user_id: user?.id,
+      user_id: user?.id || "temp-user",
       repo_url: repo,
       repo_name: repo.split("github.com/")[1],
-      status: "analyzed",
+      status: "completed",
     },
   ])
   .select();
-  
 
-  const project = projectData?.[0];
+console.log("INSERT RESULT:", projectData, error);
 
-  console.log("NEW PROJECT:", project);
+    const project = projectData?.[0];
 
-  // 🔹 3. Update states
-  if (project) {
-    setProjectId(project.id);
+    if (project) {
+      setProjectId(project.id);
 
-    setProjects((prev) => {
-      const exists = prev.find((p) => p.id === project.id);
-      if (exists) return prev;
-      return [project, ...prev];
+      setProjects((prev) => {
+        const exists = prev.find((p) => p.id === project.id);
+        if (exists) return prev;
+        return [project, ...prev];
+      });
+    }
+
+    setAnalysis(apiData.data);
+
+    // save analysis
+    if (project?.id) {
+      await supabase.from("ai_outputs").insert({
+        project_id: project.id,
+        output_type: "analysis",
+        ai_output_json: apiData.data,
+      });
+    }
+
+    // stream response
+    setMessages([{ role: "assistant", content: "" }]);
+
+    await streamText(
+      `🚀 Analysis Complete\n\n${apiData.data.summary}\n\nTech Stack: ${apiData.data.techStack.join(
+        ", "
+      )}\n\nArchitecture: ${
+        apiData.data.architecture
+      }\n\nKey Modules: ${apiData.data.keyModules.join(", ")}`
+    );
+
+    // save message
+    if (project?.id) {
+      await supabase.from("project_messages").insert({
+        project_id: project.id,
+        role: "assistant",
+        message: JSON.stringify(apiData.data),
+      });
+    }
+
+    setLoading(false);
+  };
+
+  // ✅ Chat
+  const sendMessage = async () => {
+    if (!input || !projectId) return;
+
+    const userMsg = input;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: userMsg },
+      { role: "assistant", content: "" },
+    ]);
+
+    setInput("");
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        question: userMsg,
+        context: analysis,
+      }),
     });
+
+    const data: any = await res.json();
+
+    await supabase.from("project_messages").insert([
+      {
+        project_id: projectId,
+        role: "user",
+        message: userMsg,
+      },
+      {
+        project_id: projectId,
+        role: "assistant",
+        message: data.answer,
+      },
+    ]);
+
+    await streamText(data.answer);
+  };
+
+// NEW CHAT
+const startNewChat = () => {
+  setProjectId(null);
+  setMessages([]);
+  setStarted(false);
+  setAnalysis(null);
+  setRepo("");
+};
+
+// DELETE
+const deleteProject = async (id: string) => {
+  await supabase.from("projects").delete().eq("id", id);
+
+  setProjects((prev) => prev.filter((p) => p.id !== id));
+
+  if (projectId === id) {
+    startNewChat();
   }
+};
 
-  setAnalysis(apiData.data);
+// RENAME
+const renameProject = async (id: string, name: string) => {
+  await supabase
+    .from("projects")
+    .update({ repo_name: name })
+    .eq("id", id);
 
-  // 🔹 4. Save AI output
-  if (project?.id) {
-    await supabase.from("ai_outputs").insert({
-      project_id: project.id,
-      output_type: "analysis",
-      ai_output_json: apiData.data,
-    });
-  }
-
-  // 🔹 5. Stream response
-  setMessages([
-    {
-      role: "assistant",
-      content: "",
-    },
-  ]);
-
-  await streamText(
-    `🚀 Analysis Complete\n\n${apiData.data.summary}\n\nTech Stack: ${apiData.data.techStack.join(
-      ", "
-    )}\n\nArchitecture: ${apiData.data.architecture}\n\nKey Modules: ${apiData.data.keyModules.join(
-      ", "
-    )}`
+  setProjects((prev) =>
+    prev.map((p) => (p.id === id ? { ...p, repo_name: name } : p))
   );
-
-  // 🔹 6. Save first message
-  if (project?.id) {
-    await supabase.from("project_messages").insert({
-      project_id: project.id,
-      role: "assistant",
-      message: JSON.stringify(apiData.data),
-    });
-  }
-
-  setLoading(false);
 };
 
-  /* ================= CHAT ================= */
-const sendMessage = async () => {
-  if (!input || !analysis || !projectId) return;
-
-  const userMsg = input;
-
-  setMessages((prev) => [
-    ...prev,
-    { role: "user", content: userMsg },
-    { role: "assistant", content: "" },
-  ]);
-
-  setInput("");
-
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    body: JSON.stringify({
-      question: userMsg,
-      context: analysis,
-    }),
-  });
-
-  const data: any = await res.json();
-
-  // ✅ Save chat messages
-await supabase.from("project_messages").insert([
-  {
-    project_id: projectId,
-    role: "user",
-    message: userMsg,
-  },
-  {
-    project_id: projectId,
-    role: "assistant",
-    message: data.answer,
-  },
-]);
-
-  await streamText(data.answer);
-};
   return (
     <div className="flex">
-<Sidebar projects={projects} onSelect={loadProject} />
+      
+<Sidebar
+  projects={projects}
+  onSelect={loadProject}
+  onDelete={deleteProject}
+  onNew={startNewChat}
+  onRename={renameProject}
+/>
 
        <div className="flex-1 px-6 py-10">
 
@@ -286,7 +321,11 @@ await supabase.from("project_messages").insert([
     : "bg-[#0f0f0f] border border-[#1f1f1f] text-zinc-300 backdrop-blur-md whitespace-pre-line"
 }`}
               >
-                {msg.content}
+                <div>
+  {typeof msg.content === "object"
+    ? JSON.stringify(msg.content, null, 2)
+    : msg.content}
+</div>
               </div>
             </div>
           ))}
