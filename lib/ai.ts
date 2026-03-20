@@ -4,76 +4,176 @@ export function analyzeRepository(repoData: any) {
     ...repoData.devDependencies,
   };
 
-  let techStack: string[] = [];
+  // 🔥 TECH STACK DETECTION
+  const techStack: string[] = [];
 
-  // deps detection
-  if (deps.next) techStack.push("Next.js");
-  if (deps.react) techStack.push("React");
-  if (deps.vue) techStack.push("Vue");
-  if (deps.express) techStack.push("Express");
-  if (deps.tailwindcss) techStack.push("Tailwind CSS");
-  if (deps.prisma) techStack.push("Prisma");
+  const checks = [
+    ["next", "Next.js"],
+    ["react", "React"],
+    ["vue", "Vue"],
+    ["angular", "Angular"],
+    ["express", "Express"],
+    ["fastify", "Fastify"],
+    ["tailwindcss", "Tailwind CSS"],
+    ["bootstrap", "Bootstrap"],
+    ["prisma", "Prisma"],
+    ["mongoose", "MongoDB"],
+    ["mongodb", "MongoDB"],
+    ["pg", "PostgreSQL"],
+    ["mysql", "MySQL"],
+  ];
 
-  // fallback → languages
-  if (techStack.length === 0 && repoData.languages?.length) {
-    techStack = repoData.languages;
+  checks.forEach(([key, name]) => {
+    if (deps[key]) techStack.push(name as string);
+  });
+
+  if (!techStack.length && repoData.languages?.length) {
+    techStack.push(...repoData.languages);
   }
 
-  // architecture
-  let architecture = "Standard project structure";
+  // 🔥 ARCHITECTURE DETECTION
+  let architecture = "Monolithic";
 
   if (repoData.files?.some((f: string) => f.startsWith("app/"))) {
     architecture = "Next.js App Router";
   } else if (repoData.files?.some((f: string) => f.startsWith("pages/"))) {
     architecture = "Next.js Pages Router";
   } else if (repoData.files?.some((f: string) => f.includes("routes"))) {
-    architecture = "Backend (Express-like)";
+    architecture = "API / Backend Architecture";
+  } else if (repoData.files?.some((f: string) => f.includes("services"))) {
+    architecture = "Service-based Architecture";
   }
 
-  // smarter modules
-  const keyModules = repoData.files
-    ?.filter((f: string) =>
-      ["app/", "pages/", "components/", "lib/", "api/"].some((p) =>
-        f.startsWith(p)
+  // 🔥 KEY MODULES
+  const keyModules =
+    repoData.files
+      ?.filter((f: string) =>
+        ["app/", "pages/", "components/", "lib/", "api/", "src/"].some((p) =>
+          f.startsWith(p)
+        )
       )
-    )
-    .slice(0, 8);
+      .slice(0, 12) || [];
 
-  // better summary
+  // 🔥 PROJECT TYPE
+  let projectType = "General Application";
+
+  if (techStack.includes("Next.js") || techStack.includes("React")) {
+    projectType = "Frontend / Fullstack Web App";
+  } else if (techStack.includes("Express")) {
+    projectType = "Backend API Server";
+  }
+
+  // 🔥 COMPLEXITY
+  const complexity =
+    keyModules.length > 10
+      ? "High"
+      : keyModules.length > 5
+      ? "Medium"
+      : "Low";
+
+  // 🔥 SCORE SYSTEM (NEW 🔥)
+  const score = {
+    structure: Math.min(100, keyModules.length * 10),
+    modernity: techStack.includes("Next.js") ? 90 : 60,
+    scalability: complexity === "High" ? 85 : complexity === "Medium" ? 70 : 50,
+  };
+
+  // 🔥 CLEAN JSON (for UI later)
+  const structured = {
+    projectType,
+    techStack,
+    architecture,
+    complexity,
+    keyModules,
+    score,
+  };
+
+  // 🔥 PREMIUM TEXT OUTPUT
   const summary = `
-This repository uses ${techStack.join(", ") || "multiple technologies"}.
+🚀 PROJECT OVERVIEW
+This is a **${projectType}** built with **${
+    techStack.join(", ") || "multiple technologies"
+  }**.
 
-Architecture follows: ${architecture}.
+🏗️ ARCHITECTURE
+The project follows **${architecture}**, indicating a ${
+    architecture.includes("Next")
+      ? "modern fullstack design"
+      : "structured modular system"
+  }.
 
-Main areas include: ${keyModules.slice(0, 3).join(", ")}.
+🧩 CORE MODULES
+${keyModules.slice(0, 6).map((m: string) => `• ${m}`).join("\n")}
+
+⚙️ COMPLEXITY
+This project has a **${complexity} complexity level**, suggesting ${
+    complexity === "High"
+      ? "a scalable production-ready system"
+      : complexity === "Medium"
+      ? "moderate modularity"
+      : "a simple structure"
+  }.
+
+📊 QUALITY SCORE
+• Structure: ${score.structure}/100  
+• Modernity: ${score.modernity}/100  
+• Scalability: ${score.scalability}/100  
+
+💡 INSIGHT
+${
+  techStack.includes("Next.js")
+    ? "Optimized for performance, SSR, and scalability."
+    : techStack.includes("Express")
+    ? "Focused on backend API logic and data handling."
+    : "General-purpose project with flexible architecture."
+}
 `;
 
   return {
-    techStack: techStack.length ? techStack : ["Not detected"],
-    architecture,
-    keyModules,
+    ...structured,
     summary,
   };
 }
 
+// 🔥 SMART CHAT RESPONDER
 export function answerQuestion(question: string, ctx: any) {
   const q = question.toLowerCase();
 
   if (q.includes("tech")) {
-    return `Tech Stack: ${ctx.techStack.join(", ")}`;
+    return `⚙️ Tech Stack:\n${ctx.techStack.join(", ")}`;
   }
 
   if (q.includes("architecture")) {
-    return ctx.architecture;
+    return `🏗️ Architecture:\n${ctx.architecture}`;
   }
 
   if (q.includes("modules") || q.includes("structure")) {
-    return `Key Modules: ${ctx.keyModules.join(", ")}`;
+    return `🧩 Key Modules:\n${ctx.keyModules.join(", ")}`;
+  }
+
+  if (q.includes("complexity")) {
+    return `⚙️ Complexity: ${ctx.complexity}`;
+  }
+
+  if (q.includes("score")) {
+    return `📊 Scores:
+Structure: ${ctx.score.structure}
+Modernity: ${ctx.score.modernity}
+Scalability: ${ctx.score.scalability}`;
+  }
+
+  if (q.includes("type")) {
+    return `📦 Project Type: ${ctx.projectType}`;
   }
 
   if (q.includes("summary") || q.includes("about")) {
     return ctx.summary;
   }
 
-  return "I can answer about tech stack, architecture, or structure.";
+  return `🤖 You can ask about:
+• Tech stack
+• Architecture
+• Structure
+• Complexity
+• Scores`;
 }
