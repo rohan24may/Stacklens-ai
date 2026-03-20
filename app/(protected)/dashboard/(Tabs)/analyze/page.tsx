@@ -6,6 +6,7 @@ import { supabase } from "@/lib/db/supabase";
 import Sidebar from "@/components/Sidebar";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 
 export default function AnalyzePage({ projectIdFromUrl }: any) {
   const [repo, setRepo] = useState("");
@@ -187,26 +188,140 @@ if (project?.id) {
   ]);
 }
 
+const formattedText = `# 🚀 StackLens AI – Full Repo Breakdown
 
+🔗 ${repo}
 
-await streamText(
-  `🚀 Analysis Complete\n\n${result.summary || "No summary"}\n\nTech Stack: ${
-    Array.isArray(result.techStack)
-      ? result.techStack.join(", ")
-      : result.techStack || "N/A"
-  }\n\nArchitecture: ${
-    result.architecture || "N/A"
-  }\n\nKey Modules: ${
-    Array.isArray(result.keyModules)
-      ? result.keyModules.join(", ")
-      : result.keyModules || "N/A"
-  }`
-); // save message
+---
+
+## 🧠 What this project is (Core Idea)
+
+This project is a **${result.projectType}**
+
+### 💡 In simple terms:
+- Built using: ${result.techStack.join(", ")}
+- Architecture: ${result.architecture}
+- Designed for ${
+  result.techStack.includes("Next.js")
+    ? "modern fullstack web applications"
+    : "structured modular systems"
+}
+
+⚡ Basically: **AI-powered GitHub project analyzer**
+
+---
+
+## 🏗️ Tech Stack
+
+### 🎨 Frontend
+${result.techStack
+  .filter((t: string) =>
+    ["Next.js", "React", "Vue", "Angular", "Tailwind CSS"].includes(t)
+  )
+  .map((t: string) => `- ${t}`)
+  .join("\n") || "- Not clearly detected"}
+
+---
+
+### ⚙️ Backend / Architecture
+- ${result.architecture}
+
+---
+
+### 🗄️ Database
+- ${result.techStack.includes("MongoDB") ? "MongoDB" : "Supabase / Unknown"}
+
+Used for:
+- storing projects
+- user data
+- chat history
+
+---
+
+## 🧩 Core Features
+
+### 1. 🔗 Repository Input
+- Accepts GitHub repo URL
+- Fetches repo data
+
+---
+
+### 2. 🤖 AI Analysis Engine
+- Reads project structure
+- Generates:
+  - Overview
+  - Architecture
+  - Tech stack
+  - Module breakdown
+
+---
+
+### 3. 📂 Project Structure
+
+${result.keyModules
+  .slice(0, 10)
+  .map((m: string) => `- ${m}`)
+  .join("\n")}
+
+---
+
+## 🏛️ Architecture
+
+\`\`\`
+${result.keyModules.slice(0, 6).join("\n")}
+\`\`\`
+
+---
+
+## ⚙️ Complexity Analysis
+
+### Level: ${result.complexity}
+
+${
+  result.complexity === "High"
+    ? "- Highly modular and scalable system\n- Production-ready architecture"
+    : result.complexity === "Medium"
+    ? "- Balanced structure\n- Moderate scalability"
+    : "- Simple and easy to understand"
+}
+
+---
+
+## 📊 Quality Score
+
+- Structure: ${result.score.structure}
+- Modernity: ${result.score.modernity}
+- Scalability: ${result.score.scalability}
+
+---
+
+## 💡 Insights
+
+${
+  result.techStack.includes("Next.js")
+    ? "Modern web architecture with strong performance capabilities."
+    : "Flexible system with potential for further optimization."
+}
+
+---
+
+## 🧨 Final Verdict
+
+### ⭐ Current State:
+Well-structured project with ${
+  result.complexity === "High" ? "strong scalability" : "good foundations"
+}
+
+### 🚀 Potential:
+Can evolve into a **production-grade or portfolio-level project**
+`;
+
+await streamText(formattedText); // save message
     if (project?.id) {
       await supabase.from("project_messages").insert({
         project_id: project.id,
         role: "assistant",
-       message: JSON.stringify(result), 
+       message: formattedText, 
       });
     }
 
@@ -373,14 +488,14 @@ const renameProject = async (id: string, name: string) => {
                 className={`max-w-[75%] px-5 py-4 text-sm leading-relaxed rounded-2xl transition-all ${
   msg.role === "user"
     ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg"
-    : "bg-[#0f0f0f] border border-[#1f1f1f] text-zinc-300 backdrop-blur-md whitespace-pre-line"
+    : "bg-gradient-to-br from-[#0f0f0f] to-[#111] border border-[#222] shadow-[0_0_30px_rgba(0,0,0,0.3)] text-zinc-300 backdrop-blur-md"
 }`}
               >
-                <div>
-  {typeof msg.content === "object"
-    ? JSON.stringify(msg.content, null, 2)
-    : msg.content}
-</div>
+<div className="prose prose-invert prose-headings:text-white prose-p:text-zinc-300 prose-strong:text-white max-w-none text-sm">
+  <ReactMarkdown>
+    {msg.content}
+  </ReactMarkdown>
+</div>         
               </div>
             </div>
           ))}
