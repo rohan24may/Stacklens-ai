@@ -5,8 +5,9 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/db/supabase";
 import Sidebar from "@/components/Sidebar";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
-export default function AnalyzePage() {
+export default function AnalyzePage({ projectIdFromUrl }: any) {
   const [repo, setRepo] = useState("");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
@@ -17,9 +18,17 @@ export default function AnalyzePage() {
   const [projects, setProjects] = useState<any[]>([]);
   const bottomRef = useRef<any>(null);
   const { user } = useUser();
+  const inputRef = useRef<any>(null);
+const router = useRouter();
+  
+  useEffect(() => {
+  if (started) {
+    inputRef.current?.focus();
+  }
+}, [started, projectId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: messages.length > 1 ? "smooth" : "auto"});
   }, [messages]);
 
   const tryParseJSON = (str: string) => {
@@ -44,10 +53,32 @@ export default function AnalyzePage() {
     load();
   }, []);
 
+  useEffect(() => {
+  if (!projectIdFromUrl) return;
+
+  const loadFromUrl = async () => {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectIdFromUrl)
+      .single();
+
+    if (project) {
+      loadProject(project);
+    }
+  };
+
+  loadFromUrl();
+}, [projectIdFromUrl]);
+
   // ✅ Load project
   const loadProject = async (project: any) => {
+    router.push(`/dashboard/analyze/${project.id}`);
     setProjectId(project.id);
     setStarted(true);
+    setTimeout(() => {
+  inputRef.current?.focus();
+}, 50);
 
     // load analysis
     const { data: aiData } = await supabase
@@ -103,9 +134,9 @@ export default function AnalyzePage() {
     setStarted(true);
     setLoading(true);
 
-    setMessages([
-      { role: "assistant", content: "Analyzing repository..." },
-    ]);
+setMessages([
+  { role: "assistant", content: "Analyzing..." },
+]);
 
     const res = await fetch("/api/analyze", {
       method: "POST",
@@ -132,6 +163,8 @@ console.log("INSERT RESULT:", projectData, error);
     const project = projectData?.[0];
 
     if (project) {
+      router.push(`/dashboard/analyze/${project.id}`);
+      
       setProjectId(project.id);
 
       setProjects((prev) => {
@@ -177,17 +210,18 @@ console.log("INSERT RESULT:", projectData, error);
 
   // ✅ Chat
   const sendMessage = async () => {
-    if (!input || !projectId) return;
+    if (!input.trim() || !projectId) return;
 
     const userMsg = input;
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: userMsg },
-      { role: "assistant", content: "" },
-    ]);
+setMessages((prev) => [
+  ...prev,
+  { role: "user", content: userMsg },
+  { role: "assistant", content: "Thinking..." },
+]);
 
     setInput("");
+    inputRef.current?.focus();
 
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -217,17 +251,31 @@ console.log("INSERT RESULT:", projectData, error);
 
 // NEW CHAT
 const startNewChat = () => {
+  // reset everything instantly
   setProjectId(null);
   setMessages([]);
-  setStarted(false);
   setAnalysis(null);
   setRepo("");
+  setStarted(false); // (no delay)
+
+  // focus input after reset
+  setTimeout(() => {
+    inputRef.current?.focus();
+  }, 50);
 };
 
 // DELETE
 const deleteProject = async (id: string) => {
+  // delete messages
+  await supabase.from("project_messages").delete().eq("project_id", id);
+
+  // delete analysis
+  await supabase.from("ai_outputs").delete().eq("project_id", id);
+
+  // delete project
   await supabase.from("projects").delete().eq("id", id);
 
+  // update UI
   setProjects((prev) => prev.filter((p) => p.id !== id));
 
   if (projectId === id) {
@@ -249,7 +297,7 @@ const renameProject = async (id: string, name: string) => {
 
   return (
     <div className="flex">
-      
+
 <Sidebar
   projects={projects}
   onSelect={loadProject}
@@ -334,6 +382,13 @@ const renameProject = async (id: string, name: string) => {
           {/* INPUT */}
           <div className="flex gap-3 mt-4">
             <input
+            ref={inputRef}
+            onKeyDown={(e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about this repository..."
