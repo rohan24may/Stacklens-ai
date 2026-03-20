@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Sidebar({
   projects,
@@ -42,6 +42,12 @@ function ProjectItem({ project, onSelect, onDelete, onRename }: any) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project.repo_name);
+
+  useEffect(() => {
+  const handler = () => setOpen(false);
+  window.addEventListener("click", handler);
+  return () => window.removeEventListener("click", handler);
+}, []);
 
   return (
     <div className="relative group p-2 text-sm bg-[#111] rounded-md mb-2 hover:bg-[#1a1a1a]">
