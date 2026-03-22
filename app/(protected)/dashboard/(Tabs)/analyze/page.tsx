@@ -23,6 +23,8 @@ export default function AnalyzePage({ projectIdFromUrl }: any) {
   const inputRef = useRef<any>(null);
   const router = useRouter();
   const [autoScroll, setAutoScroll] = useState(true);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const analysisRef = useRef<any>(null);
   
   useEffect(() => {
   if (started) {
@@ -93,7 +95,13 @@ if (project && project.id !== projectId) {
       .eq("project_id", project.id)
       .maybeSingle()
 
-    setAnalysis(aiData?.ai_output_json);
+    const loaded = aiData?.ai_output_json;
+
+setAnalysis(loaded);
+setAnalysisData(loaded);
+analysisRef.current = loaded;
+
+console.log("✅ RESTORED ANALYSIS:", loaded);
 
     // load messages
     const { data } = await supabase
@@ -150,7 +158,7 @@ setMessages([
     });
 
     const apiData: any = await res.json();
-console.log("API DATA:", apiData);
+             console.log("FULL API RESPONSE:", apiData);
     // create project
 const { data: projectData, error } = await supabase
   .from("projects")
@@ -178,15 +186,23 @@ if (project) {
   });
 }
 
-const result = apiData.data || apiData;
-setAnalysis(result);
+const result = apiData?.data;
+
+if (!result) {
+  console.log("❌ NO RESULT FROM API", apiData);
+  setLoading(false);
+  return;
+}
+
+setAnalysisData(result);
+analysisRef.current = result;
+console.log("✅ ANALYSIS DATA SET:", result);
 
 // save analysis
 if (project?.id) {
   await supabase.from("ai_outputs").insert([
     {
       project_id: project.id,
-      output_type: "analysis",
       ai_output_json: result,
     },
   ]);
@@ -344,45 +360,52 @@ await streamText(formattedText); // save message
 
   // ✅ Chat
   const sendMessage = async () => {
-    if (!input.trim() || !projectId) return;
+  if (!input.trim() || !projectId) return;
 
-    const userMsg = input;
+ const ctx = analysisRef.current;
+ console.log("CTX SENT:", ctx);
 
-setMessages((prev) => [
-  ...prev,
-  { role: "user", content: userMsg },
-  { role: "assistant", content: "Thinking..." },
-]);
+if (!ctx) {
+  console.log("❌ No analysis data");
+  return;
+}
 
-    setInput("");
-    inputRef.current?.focus();
+  const userMsg = input;
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        question: userMsg,
-        context: analysis,
-        messages: messages, 
-      }),
-    });
+  setMessages((prev) => [
+    ...prev,
+    { role: "user", content: userMsg },
+    { role: "assistant", content: "Thinking..." },
+  ]);
 
-    const data: any = await res.json();
+  setInput("");
+  inputRef.current?.focus();
 
-    await supabase.from("project_messages").insert([
-      {
-        project_id: projectId,
-        role: "user",
-        message: userMsg,
-      },
-      {
-        project_id: projectId,
-        role: "assistant",
-        message: data.answer,
-      },
-    ]);
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      question: userMsg,
+      context: ctx,
+    }),
+  });
 
-    await streamText(data.answer);
-  };
+  const data: any = await res.json();
+
+  await supabase.from("project_messages").insert([
+    {
+      project_id: projectId,
+      role: "user",
+      message: userMsg,
+    },
+    {
+      project_id: projectId,
+      role: "assistant",
+      message: data.answer,
+    },
+  ]);
+
+  await streamText(data.answer);
+};
 
 // NEW CHAT
 const startNewChat = () => {

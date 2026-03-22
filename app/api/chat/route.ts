@@ -2,12 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { answerQuestion } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
-  const { question, context, messages } = await req.json();
+  try {
+    const body = await req.json();
 
-  // take last few messages for memory
-  const history = messages?.slice(-5) || [];
+    const question = body.question || "";
+    const context = body.context || {};
+    const messages = Array.isArray(body.messages) ? body.messages : [];
 
-  const answer = answerQuestion(question, context, history);
+    const history = messages.slice(-5);
 
-  return NextResponse.json({ answer });
+    const answer = answerQuestion(question, context, history);
+
+    return NextResponse.json({ answer });
+  } catch (err) {
+    console.error("API ERROR:", err);
+
+    return NextResponse.json({
+      answer: "⚠️ Something went wrong. Try again.",
+    });
+  }
 }
