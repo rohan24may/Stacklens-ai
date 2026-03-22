@@ -21,7 +21,8 @@ export default function AnalyzePage({ projectIdFromUrl }: any) {
   const bottomRef = useRef<any>(null);
   const { user } = useUser();
   const inputRef = useRef<any>(null);
-const router = useRouter();
+  const router = useRouter();
+  const [autoScroll, setAutoScroll] = useState(true);
   
   useEffect(() => {
   if (started) {
@@ -29,9 +30,11 @@ const router = useRouter();
   }
 }, [started, projectId]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: messages.length > 1 ? "smooth" : "auto"});
-  }, [messages]);
+useEffect(() => {
+  if (autoScroll) {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+}, [messages, autoScroll]);
 
   const tryParseJSON = (str: string) => {
     try {
@@ -189,7 +192,7 @@ if (project?.id) {
   ]);
 }
 
-const formattedText = `# 🚀 StackLens AI – Full Repo Breakdown
+const formattedText = `# 🚀 ${repo.split("/").pop()} – Full Repo Breakdown
 
 🔗 ${repo}
 
@@ -359,6 +362,7 @@ setMessages((prev) => [
       body: JSON.stringify({
         question: userMsg,
         context: analysis,
+        messages: messages, 
       }),
     });
 
@@ -457,19 +461,31 @@ const renameProject = async (id: string, name: string) => {
     </p>
 
     <div className="flex gap-3">
-      <input
-        value={repo}
-        onChange={(e) => setRepo(e.target.value)}
-        placeholder="https://github.com/user/repo"
-        className="flex-1 bg-black/40 border border-[#1a1a1a] rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 transition"
-      />
+<input
+  value={repo}
+  onChange={(e) => setRepo(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAnalyze();
+    }
+  }}
+  placeholder="https://github.com/user/repo"
+  className="flex-1 bg-black/40 border border-[#1a1a1a] rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500"
+/>
 
-      <button
-        onClick={handleAnalyze}
-        className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-sm font-medium hover:scale-105 active:scale-95 transition-all shadow-lg shadow-purple-500/20"
-      >
-        {loading ? "Analyzing..." : "Analyze"}
-      </button>
+<button
+  onClick={handleAnalyze}
+  disabled={loading}
+  className={`px-6 py-3 rounded-xl text-sm font-medium transition-all
+  ${
+    loading
+      ? "bg-zinc-700 cursor-not-allowed opacity-60"
+      : "bg-gradient-to-r from-purple-600 to-cyan-500 hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
+  }`}
+>
+  {loading ? "Analyzing..." : "Analyze"}
+</button>
     </div>
 
   </div>
@@ -486,7 +502,16 @@ const renameProject = async (id: string, name: string) => {
 
       {/* CHAT */}
       {started && (
-        <div className="max-w-3xl mx-auto mt-10 flex flex-col gap-6">
+        <div
+  onScroll={(e) => {
+    const target = e.currentTarget;
+    const isAtBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+
+    setAutoScroll(isAtBottom);
+  }}
+  className="max-w-3xl mx-auto mt-10 flex flex-col gap-6"
+>
 
           {messages.map((msg, i) => (
             <div
@@ -496,7 +521,7 @@ const renameProject = async (id: string, name: string) => {
               }`}
             >
               <div
-                className={`max-w-[75%] px-5 py-4 text-sm leading-relaxed rounded-2xl transition-all ${
+                className={`max-w-[85%] px-5 py-4 text-sm leading-relaxed rounded-2xl transition-all ${
   msg.role === "user"
     ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg"
     : "bg-gradient-to-br from-[#0f0f0f] to-[#111] border border-[#222] shadow-[0_0_30px_rgba(0,0,0,0.3)] text-zinc-300 backdrop-blur-md"
@@ -505,7 +530,7 @@ const renameProject = async (id: string, name: string) => {
          <ReactMarkdown
   remarkPlugins={[remarkGfm]}
   components={{
-    h1: (props) => <h1 className="text-2xl font-bold my-4" {...props} />,
+    h1: (props) => <h1 className="text-3xl font-bold my-5" {...props} />,
     h2: (props) => <h2 className="text-xl font-semibold mt-6 mb-3" {...props} />,
     h3: (props) => <h3 className="text-lg font-medium mt-4 mb-2" {...props} />,
     p: (props) => <p className="mb-3 leading-7 text-zinc-300" {...props} />,
@@ -540,10 +565,10 @@ code: ({ node, inline, className, children, ...props }: any) => {
           <div className="flex gap-3 mt-4">
             <input
             ref={inputRef}
-            onKeyDown={(e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+onKeyDown={(e) => {
+  if (e.key === "Enter" && !loading) {
     e.preventDefault();
-    sendMessage();
+    handleAnalyze();
   }
 }}
               value={input}
