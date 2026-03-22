@@ -7,6 +7,7 @@ import Sidebar from "@/components/Sidebar";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function AnalyzePage({ projectIdFromUrl }: any) {
   const [repo, setRepo] = useState("");
@@ -292,6 +293,8 @@ ${
 - Structure: ${result.score.structure}
 - Modernity: ${result.score.modernity}
 - Scalability: ${result.score.scalability}
+- Maintainability: ${result.score.maintainability}
+- DevOps: ${result.score.devops}
 
 ---
 
@@ -302,6 +305,14 @@ ${
     ? "Modern web architecture with strong performance capabilities."
     : "Flexible system with potential for further optimization."
 }
+
+---
+## 🧪 DevOps & Setup
+
+- Docker: ${result.insights.hasDocker ? "✅ Present" : "❌ Not found"}
+- CI/CD: ${result.insights.hasCI ? "✅ Configured" : "❌ Not found"}
+- Environment Config: ${result.insights.hasEnv ? "✅ Present" : "❌ Missing"}
+- Testing: ${result.insights.hasTests ? "✅ Tests included" : "❌ No tests"}
 
 ---
 
@@ -491,11 +502,35 @@ const renameProject = async (id: string, name: string) => {
     : "bg-gradient-to-br from-[#0f0f0f] to-[#111] border border-[#222] shadow-[0_0_30px_rgba(0,0,0,0.3)] text-zinc-300 backdrop-blur-md"
 }`}
               >
-<div className="prose prose-invert prose-headings:text-white prose-p:text-zinc-300 prose-strong:text-white max-w-none text-sm">
-  <ReactMarkdown>
-    {msg.content}
-  </ReactMarkdown>
-</div>         
+         <ReactMarkdown
+  remarkPlugins={[remarkGfm]}
+  components={{
+    h1: (props) => <h1 className="text-2xl font-bold my-4" {...props} />,
+    h2: (props) => <h2 className="text-xl font-semibold mt-6 mb-3" {...props} />,
+    h3: (props) => <h3 className="text-lg font-medium mt-4 mb-2" {...props} />,
+    p: (props) => <p className="mb-3 leading-7 text-zinc-300" {...props} />,
+    ul: (props) => <ul className="list-disc pl-6 mb-3 space-y-1" {...props} />,
+    li: (props) => <li className="text-zinc-300" {...props} />,
+    hr: () => <hr className="my-4 border-zinc-700" />,
+code: ({ node, inline, className, children, ...props }: any) => {
+  if (inline) {
+    return (
+      <code className="bg-zinc-800 px-1 rounded" {...props}>
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <pre className="bg-black p-3 rounded mb-3 overflow-x-auto">
+      <code {...props}>{children}</code>
+    </pre>
+  );
+},
+  }}
+>
+  {msg.content}
+</ReactMarkdown>
               </div>
             </div>
           ))}
