@@ -362,6 +362,7 @@ setMessages((prev) => [
       body: JSON.stringify({
         question: userMsg,
         context: analysis,
+        messages: messages, 
       }),
     });
 
