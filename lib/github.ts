@@ -34,16 +34,21 @@ export async function getRepoData(repoUrl: string) {
   const languages = await langRes.json();
 
   // 3️⃣ File tree
-  const treeRes = await fetch(
-    `${GITHUB_API}/repos/${owner}/${repo}/git/trees/${repoData.default_branch}?recursive=1`,
-    { headers }
-  );
+const branch = repoData.default_branch || "main";
+
+const treeRes = await fetch(
+  `${GITHUB_API}/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+  { headers }
+);
   const treeData = await treeRes.json();
 
   const files =
     treeData.tree
       ?.filter((item: any) => item.type === "blob")
       .map((item: any) => item.path) || [];
+
+      console.log("TOTAL FILES:", files.length);
+console.log("SAMPLE FILES:", files.slice(0, 20));
 
   // 4️⃣ package.json
   let packageJson: any = null;
@@ -63,14 +68,14 @@ export async function getRepoData(repoUrl: string) {
     packageJson = null;
   }
 
-  return {
-    owner,
-    repo,
-    description: repoData.description,
-    defaultBranch: repoData.default_branch,
-    languages: Object.keys(languages),
-    files,
-    dependencies: packageJson?.dependencies || {},
-    devDependencies: packageJson?.devDependencies || {},
-  };
+return {
+  owner,
+  repo,
+  description: repoData.description,
+  default_branch: repoData.default_branch,
+  languages: Object.keys(languages),
+  files,
+  dependencies: packageJson?.dependencies || {},
+  devDependencies: packageJson?.devDependencies || {},
+};
 }

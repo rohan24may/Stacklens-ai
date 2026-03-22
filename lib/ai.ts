@@ -1,3 +1,19 @@
+
+
+function buildReasoning(ctx: any) {
+  return `
+### 🧠 How I’m Thinking
+- This is a ${ctx.projectType || "project"}
+- Built with ${(ctx.techStack || []).slice(0, 3).join(", ")}
+- Uses ${ctx.architecture || "unknown architecture"}
+
+### 🔍 What I’m Looking At
+- Project structure (key modules)
+- Tech stack and dependencies
+- DevOps & testing setup
+`;
+}
+
 export function analyzeRepository(repoData: any) {
   const deps = {
     ...repoData.dependencies,
@@ -5,6 +21,7 @@ export function analyzeRepository(repoData: any) {
   };
 
   const files: string[] = repoData.files || [];
+
 
   // 🔥 TECH STACK DETECTION (EXPANDED)
   const techStack: string[] = [];
@@ -127,6 +144,7 @@ export function analyzeRepository(repoData: any) {
     hasEnv,
     hasTests,
   };
+  const fileMap = files.slice(0, 100);
 
   // 🔥 FINAL STRUCTURE
   return {
@@ -137,142 +155,324 @@ export function analyzeRepository(repoData: any) {
     keyModules,
     score,
     insights,
+    fileMap,
   };
 }
 export function answerQuestion(question: string, ctx: any, history: any[] = []) {
-  const q = question.toLowerCase();
+  try {
+    const q = (question || "").toLowerCase();
 
-  // 🔥 MEMORY CONTEXT (last 2 messages)
-  const lastContext = history
-    .slice(-2)
-    .map((m) => m.content)
-    .join(" ");
+    if (!ctx) {
+      return "⚠️ No analysis context available.";
+    }
 
-  // 🔥 INVALID FILTER
-  const invalidPatterns = ["hi", "hello", "hey", "how are you", "what's up"];
+    // SAFE DEFAULTS
+    const insights = ctx.insights || {};
+    const score = ctx.score || {};
+    const keyModules = ctx.keyModules || [];
+    const techStack = ctx.techStack || [];
 
-  if (invalidPatterns.some((p) => q === p || q.includes(p))) {
-    return `🤖 Ask something about the repository.
+const isRepoQuestion =
+  [
+    "repo", "project", "code", "file", "auth", "api",
+    "tech", "architecture", "improve", "issue",
+    "performance", "flow", "system", "how", "explain"
+  ].some(word => q.includes(word));
 
-Examples:
-• What tech stack is used?
-• How is the architecture designed?
-• What can be improved?
-• Any issues in this project?`;
-  }
+if (!isRepoQuestion) {
+  return `## 🤖 Not Related to Repo
 
-  // 🔥 IMPROVEMENTS
-  if (q.includes("improve") || q.includes("improvement")) {
-    const suggestions = [];
+I’m designed to analyze this repository.
 
-    if (!ctx.insights.hasTests)
-      suggestions.push("Add testing (Jest / Vitest)");
+Try asking:
+- How is authentication handled?
+- What can be improved?
+- Any issues in this project?
+- Where is the backend logic?
+`;
+}
 
-    if (!ctx.insights.hasDocker)
-      suggestions.push("Add Docker setup");
+    // 🔐 AUTH
+if (q.includes("auth") || q.includes("authentication") || q.includes("login")) {
+  const hasAppRouter = ctx.architecture?.includes("App Router");
 
-    if (!ctx.insights.hasCI)
-      suggestions.push("Add CI/CD (GitHub Actions)");
+  const candidates = ctx.keyModules || [];
 
-    if (ctx.score.structure < 70)
-      suggestions.push("Improve folder structure");
+return `## 🔐 Authentication Placement
 
-    if (!suggestions.length)
-      suggestions.push("Project is already well-structured");
+${buildReasoning(ctx)}
 
-    return `## 🚀 Improvements
-
-${suggestions.map((s) => `- ${s}`).join("\n")}`;
-  }
-
-  // 🔥 ISSUES
-  if (q.includes("issue") || q.includes("problem")) {
-    const issues = [];
-
-    if (!ctx.insights.hasTests)
-      issues.push("No testing setup");
-
-    if (!ctx.insights.hasCI)
-      issues.push("No CI/CD");
-
-    if (!ctx.insights.hasEnv)
-      issues.push("Missing env config");
-
-    if (ctx.score.devops < 50)
-      issues.push("Weak DevOps");
-
-    if (!issues.length)
-      issues.push("No major issues detected");
-
-    return `## ⚠️ Issues
-
-${issues.map((i) => `- ${i}`).join("\n")}`;
-  }
-
-  // 🔥 TECH STACK
-  if (q.includes("tech")) {
-    return `## ⚙️ Tech Stack
-
-${ctx.techStack.map((t: string) => `- ${t}`).join("\n")}
-
-### 💡 Insight
-This is a ${
-      ctx.techStack.includes("Next.js")
-        ? "modern fullstack system"
-        : "general project"
-    }`;
-  }
-
-  // 🔥 ARCHITECTURE
-  if (q.includes("architecture")) {
-    return `## 🏗️ Architecture
-
-${ctx.architecture}
-
-### 💡 Explanation
-${
-  ctx.architecture.includes("Next")
-    ? "Uses modern routing and fullstack rendering"
-    : "Structured modular backend system"
-}`;
-  }
-
-  // 🔥 FILE AWARE
-  if (q.includes("where") || q.includes("file") || q.includes("location")) {
-    return `## 📂 Relevant Files
-
-${ctx.keyModules.slice(0, 8).map((f: string) => `- ${f}`).join("\n")}`;
-  }
-
-  // 🔥 COMPLEXITY
-  if (q.includes("complexity")) {
-    return `## ⚙️ Complexity
-
-${ctx.complexity}
+### 📍 Recommendation
 
 ${
-  ctx.complexity === "High"
-    ? "Highly scalable system"
-    : ctx.complexity === "Medium"
-    ? "Moderate structure"
-    : "Simple project"
-}`;
+  ctx.architecture?.includes("App Router")
+    ? "- Use `/app/api/auth`\n- Protect routes using middleware.ts"
+    : "- Use backend layer like `/lib/auth`"
+}
+
+### 💡 Final Take
+Authentication should be handled at API level, not UI.
+`;
+}
+
+    // 🚀 IMPROVEMENTS
+    if (q.includes("improve")) {
+      const suggestions = [];
+
+      if (!insights.hasTests) suggestions.push("Add testing");
+      if (!insights.hasDocker) suggestions.push("Add Docker");
+      if (!insights.hasCI) suggestions.push("Add CI/CD");
+
+      if (!suggestions.length) suggestions.push("Already well-structured");
+
+      return `## 🚀 Improvements\n\n${suggestions.map((s) => `- ${s}`).join("\n")}`;
+    }
+
+    // ⚠️ ISSUES
+    if (q.includes("issue") || q.includes("problem")) {
+      const issues = [];
+
+      if (!insights.hasTests) issues.push("No testing setup");
+      if (!insights.hasCI) issues.push("No CI/CD");
+      if (!insights.hasEnv) issues.push("Missing env config");
+
+      if (!issues.length) issues.push("No major issues");
+
+      return `## ⚠️ Issues\n\n${issues.map((i) => `- ${i}`).join("\n")}`;
+    }
+
+    // ⚙️ TECH
+    if (q.includes("tech")) {
+      return `## ⚙️ Tech Stack\n\n${techStack.map((t: string) => `- ${t}`).join("\n")}`;
+    }
+
+    // 🏗️ ARCH
+    if (q.includes("architecture")) {
+      return `## 🏗️ Architecture\n\n${ctx.architecture || "Unknown"}`;
+    }
+
+    // 📂 FILES
+if (q.includes("where") || q.includes("file") || q.includes("location")) {
+  const fileMap = ctx.fileMap || [];
+
+  const matched = fileMap.filter((f: string) =>
+    q.split(" ").some((word) => f.toLowerCase().includes(word))
+  );
+
+  return `## 📂 File Discovery
+
+### 🔍 Matching Files:
+${
+  matched.length
+    ? matched.slice(0, 8).map((f: string) => `- ${f}`).join("\n")
+    : "- No exact match found"
+}
+
+### 💡 Tip
+Try asking:
+- Where is authentication?
+- Where is API logic?
+`;
+}
+
+    // ⚙️ COMPLEXITY
+    if (q.includes("complexity")) {
+      return `## ⚙️ Complexity\n\n${ctx.complexity || "Unknown"}`;
+    }
+if (q.includes("review") || q.includes("feedback") || q.includes("analyze deeply")) {
+  const issues = [];
+  const improvements = [];
+
+  if (!ctx.insights?.hasTests) {
+    issues.push("No testing setup — risky for production");
+    improvements.push("Add unit/integration tests (Jest/Vitest)");
   }
 
-  // 🔥 SMART FALLBACK (GPT FEEL)
-  return `## 🤖 Answer
+  if (!ctx.insights?.hasCI) {
+    issues.push("No CI/CD pipeline");
+    improvements.push("Set up GitHub Actions for automation");
+  }
 
-Based on the repository:
+  if (!ctx.insights?.hasEnv) {
+    issues.push("Missing environment configuration");
+    improvements.push("Add `.env.example` for clarity");
+  }
 
-- Type: ${ctx.projectType}
+  if (ctx.score?.structure < 70) {
+    issues.push("Project structure can become hard to scale");
+    improvements.push("Refactor into modular folders");
+  }
+
+  return `## 🧠 Senior Code Review
+
+### 🔍 Key Observations
+- Project Type: ${ctx.projectType}
 - Architecture: ${ctx.architecture}
-- Tech: ${ctx.techStack.slice(0, 3).join(", ")}
+- Complexity: ${ctx.complexity}
+
+---
+
+### ⚠️ Issues
+${issues.length ? issues.map((i) => `- ${i}`).join("\n") : "- No critical issues detected"}
+
+---
+
+### 🚀 Improvements
+${improvements.length ? improvements.map((i) => `- ${i}`).join("\n") : "- Already well structured"}
+
+---
+
+### 💡 Senior Insight
+This project is ${
+    ctx.complexity === "High"
+      ? "approaching production-grade but needs polishing"
+      : "a solid foundation but needs improvements to scale"
+  }.
+
+Focus on:
+- maintainability
+- testing
+- deployment pipeline
+`;
+}
+if (q.includes("explain") || q.includes("code") || q.includes("flow")) {
+  const files = ctx.filesContent || [];
+
+  if (!files.length) {
+    return "⚠️ No file content available.";
+  }
+
+  const selectedFiles = files.slice(0, Math.min(2, files.length));
+
+  return `## 🧠 Multi-File Code Analysis
+
+${buildReasoning(ctx)}
+
+### 📂 Files Considered:
+${selectedFiles.map((f: any) => `- ${f.path}`).join("\n")}
+
+---
+
+### 🔍 Code Snippets:
+${selectedFiles
+  .map(
+    (f: any) => `
+📄 ${f.path}
+\`\`\`
+${f.content.slice(0, 300)}
+\`\`\`
+`
+  )
+  .join("\n")}
+
+---
+
+### 🔗 How Things Connect
+
+- These files likely represent different layers of the app  
+- One handles ${
+    selectedFiles[0]?.path.includes("api")
+      ? "API/backend logic"
+      : "UI or routing"
+  }  
+- Another contributes to ${
+    selectedFiles[1]?.path.includes("lib")
+      ? "core logic/services"
+      : "application flow"
+  }
+
+---
+
+### 💡 Senior Dev Insight
+
+- Follow data flow: UI → API → logic → response  
+- Keep logic separated from UI  
+- Ensure modules are reusable  
+
+👉 This project shows a ${
+    ctx.architecture?.includes("App Router")
+      ? "modern fullstack pattern"
+      : "modular architecture"
+  }`;
+}
+if (
+  !q.includes("auth") && 
+  (
+    q.includes("database") ||
+    q.includes("api") ||
+    q.includes("backend")
+  )
+) {
+  const fileMap = ctx.fileMap || [];
+
+  const related = fileMap.filter((f: string) =>
+    ["auth", "api", "db", "user"].some((k) =>
+      f.toLowerCase().includes(k)
+    )
+  );
+
+  return `## 🧠 Feature Insight
+
+### 🔍 Related Files:
+${
+  related.length
+    ? related.slice(0, 6).map((f: string) => `- ${f}`).join("\n")
+    : "- No direct match found"
+}
+
+### 💡 Understanding
+This feature is likely handled in API/backend layers.
+
+### 🚀 Suggestion
+Keep logic centralized and avoid duplication.
+`;
+}
+if (q.includes("flow") || q.includes("how it works") || q.includes("system")) {
+  const keyModules = ctx.keyModules || [];
+
+  return `## 🔗 System Flow
+
+${buildReasoning(ctx)}
+
+### 📂 Key Modules:
+${keyModules.slice(0, 6).map((f: string) => `- ${f}`).join("\n")}
+
+---
+
+### 🔄 Flow Explanation
+
+1. User interacts with UI (pages/app)
+2. Request goes to API/backend
+3. Logic handled in services/lib
+4. Data returned to frontend
+
+---
+
+### 💡 Senior Insight
+
+- This follows ${
+    ctx.architecture || "a modular architecture"
+  }
+- Clear separation of concerns is important
+- Keep business logic out of UI
+
+👉 Think in terms of **data flow, not files**
+`;
+}
+   
+// 🤖 FALLBACK (SMART + HUMAN)
+return `## 🤖 Thought Process
+
+${buildReasoning(ctx)}
 
 ### 💡 Interpretation
-This question relates to the project structure and implementation. 
-Try asking more specific questions like:
+Your question is a bit broad.
 
-• Where is authentication handled?
-• How scalable is this project?
-• What can be improved?`;
-}
+Try asking:
+- Where is authentication handled?
+- What can be improved?
+- Any issues in this repo?
+`;
+} catch (err) { console.error("ANSWER ERROR:", err); return "⚠️ Failed to process question"; } }
+
+

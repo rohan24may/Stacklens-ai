@@ -23,7 +23,18 @@ export default function AnalyzePage({ projectIdFromUrl }: any) {
   const inputRef = useRef<any>(null);
   const router = useRouter();
   const [autoScroll, setAutoScroll] = useState(true);
+  const analysisRef = useRef<any>(null);
   
+  useEffect(() => {
+  const stored = localStorage.getItem("analysis");
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    setAnalysis(parsed);
+    analysisRef.current = parsed;
+    console.log("RESTORED ANALYSIS FROM STORAGE:", parsed);
+  }
+}, []);
+
   useEffect(() => {
   if (started) {
     inputRef.current?.focus();
@@ -93,7 +104,17 @@ if (project && project.id !== projectId) {
       .eq("project_id", project.id)
       .maybeSingle()
 
-    setAnalysis(aiData?.ai_output_json);
+const loadedAnalysis = aiData?.ai_output_json;
+
+if (loadedAnalysis) {
+  setAnalysis(loadedAnalysis);
+  analysisRef.current = loadedAnalysis;
+  console.log("LOADED ANALYSIS:", loadedAnalysis);
+} else {
+  console.log("⚠️ No analysis found in DB, keeping existing");
+}
+
+console.log("LOADED ANALYSIS:", loadedAnalysis);
 
     // load messages
     const { data } = await supabase
@@ -178,18 +199,29 @@ if (project) {
   });
 }
 
-const result = apiData.data || apiData;
+const result = apiData.data || {};
+if (!result || Object.keys(result).length === 0) {
+  console.log("❌ EMPTY ANALYSIS FROM API");
+  return;
+}
 setAnalysis(result);
+analysisRef.current = result;
+localStorage.setItem("analysis", JSON.stringify(result));
+console.log("FINAL ANALYSIS:", result);
 
 // save analysis
 if (project?.id) {
-  await supabase.from("ai_outputs").insert([
+const { data: saved, error: saveError } = await supabase
+  .from("ai_outputs")
+  .insert([
     {
       project_id: project.id,
-      output_type: "analysis",
       ai_output_json: result,
     },
   ]);
+
+console.log("SAVE RESULT:", saved);
+console.log("SAVE ERROR:", saveError);
 }
 
 const formattedText = `# 🚀 ${repo.split("/").pop()} – Full Repo Breakdown
@@ -343,46 +375,69 @@ await streamText(formattedText); // save message
   };
 
   // ✅ Chat
-  const sendMessage = async () => {
-    if (!input.trim() || !projectId) return;
+const sendMessage = async () => {
+  
+  if (!input.trim() || !projectId) return;
 
-    const userMsg = input;
+ const ctx =
+  analysisRef.current ||
+  analysis ||
+  JSON.parse(localStorage.getItem("analysis") || "null");
 
-setMessages((prev) => [
-  ...prev,
-  { role: "user", content: userMsg },
-  { role: "assistant", content: "Thinking..." },
-]);
+  console.log("USING CONTEXT:", ctx);
 
-    setInput("");
-    inputRef.current?.focus();
+  const userMsg = input;
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        question: userMsg,
-        context: analysis,
-        messages: messages, 
-      }),
-    });
+  setMessages((prev) => [
+    ...prev,
+    { role: "user", content: userMsg },
+    { role: "assistant", content: "Thinking..." },
+  ]);
 
-    const data: any = await res.json();
+  setInput("");
+  inputRef.current?.focus();
 
-    await supabase.from("project_messages").insert([
-      {
-        project_id: projectId,
-        role: "user",
-        message: userMsg,
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      question: userMsg,
+      context: {
+        ...ctx,
+        filesContent: ctx?.filesContent || [],
       },
-      {
-        project_id: projectId,
-        role: "assistant",
-        message: data.answer,
-      },
-    ]);
+      messages: messages
+        .filter((m) => m.role !== "assistant" || m.content !== "Thinking...")
+        .slice(-5),
+    }),
+  });
 
-    await streamText(data.answer);
-  };
+  let data;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = { answer: "⚠️ Failed to get response" };
+  }
+
+  await supabase.from("project_messages").insert([
+    {
+      project_id: projectId,
+      role: "user",
+      message: userMsg,
+    },
+    {
+      project_id: projectId,
+      role: "assistant",
+      message: data.answer,
+    },
+  ]);
+
+  await streamText(data.answer);
+if (!ctx) {
+  alert("Please analyze a repo first");
+  return;
+}
+};
 
 // NEW CHAT
 const startNewChat = () => {
@@ -568,7 +623,7 @@ code: ({ node, inline, className, children, ...props }: any) => {
 onKeyDown={(e) => {
   if (e.key === "Enter" && !loading) {
     e.preventDefault();
-    handleAnalyze();
+    sendMessage(); 
   }
 }}
               value={input}
