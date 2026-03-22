@@ -23,18 +23,9 @@ export default function AnalyzePage({ projectIdFromUrl }: any) {
   const inputRef = useRef<any>(null);
   const router = useRouter();
   const [autoScroll, setAutoScroll] = useState(true);
+  const [analysisData, setAnalysisData] = useState<any>(null);
   const analysisRef = useRef<any>(null);
   
-  useEffect(() => {
-  const stored = localStorage.getItem("analysis");
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    setAnalysis(parsed);
-    analysisRef.current = parsed;
-    console.log("RESTORED ANALYSIS FROM STORAGE:", parsed);
-  }
-}, []);
-
   useEffect(() => {
   if (started) {
     inputRef.current?.focus();
@@ -104,17 +95,13 @@ if (project && project.id !== projectId) {
       .eq("project_id", project.id)
       .maybeSingle()
 
-const loadedAnalysis = aiData?.ai_output_json;
+    const loaded = aiData?.ai_output_json;
 
-if (loadedAnalysis) {
-  setAnalysis(loadedAnalysis);
-  analysisRef.current = loadedAnalysis;
-  console.log("LOADED ANALYSIS:", loadedAnalysis);
-} else {
-  console.log("⚠️ No analysis found in DB, keeping existing");
-}
+setAnalysis(loaded);
+setAnalysisData(loaded);
+analysisRef.current = loaded;
 
-console.log("LOADED ANALYSIS:", loadedAnalysis);
+console.log("✅ RESTORED ANALYSIS:", loaded);
 
     // load messages
     const { data } = await supabase
@@ -171,7 +158,7 @@ setMessages([
     });
 
     const apiData: any = await res.json();
-console.log("API DATA:", apiData);
+             console.log("FULL API RESPONSE:", apiData);
     // create project
 const { data: projectData, error } = await supabase
   .from("projects")
@@ -199,29 +186,26 @@ if (project) {
   });
 }
 
-const result = apiData.data || {};
-if (!result || Object.keys(result).length === 0) {
-  console.log("❌ EMPTY ANALYSIS FROM API");
+const result = apiData?.data;
+
+if (!result) {
+  console.log("❌ NO RESULT FROM API", apiData);
+  setLoading(false);
   return;
 }
-setAnalysis(result);
+
+setAnalysisData(result);
 analysisRef.current = result;
-localStorage.setItem("analysis", JSON.stringify(result));
-console.log("FINAL ANALYSIS:", result);
+console.log("✅ ANALYSIS DATA SET:", result);
 
 // save analysis
 if (project?.id) {
-const { data: saved, error: saveError } = await supabase
-  .from("ai_outputs")
-  .insert([
+  await supabase.from("ai_outputs").insert([
     {
       project_id: project.id,
       ai_output_json: result,
     },
   ]);
-
-console.log("SAVE RESULT:", saved);
-console.log("SAVE ERROR:", saveError);
 }
 
 const formattedText = `# 🚀 ${repo.split("/").pop()} – Full Repo Breakdown
@@ -375,16 +359,16 @@ await streamText(formattedText); // save message
   };
 
   // ✅ Chat
-const sendMessage = async () => {
-  
+  const sendMessage = async () => {
   if (!input.trim() || !projectId) return;
 
- const ctx =
-  analysisRef.current ||
-  analysis ||
-  JSON.parse(localStorage.getItem("analysis") || "null");
+ const ctx = analysisRef.current;
+ console.log("CTX SENT:", ctx);
 
-  console.log("USING CONTEXT:", ctx);
+if (!ctx) {
+  console.log("❌ No analysis data");
+  return;
+}
 
   const userMsg = input;
 
@@ -401,23 +385,11 @@ const sendMessage = async () => {
     method: "POST",
     body: JSON.stringify({
       question: userMsg,
-      context: {
-        ...ctx,
-        filesContent: ctx?.filesContent || [],
-      },
-      messages: messages
-        .filter((m) => m.role !== "assistant" || m.content !== "Thinking...")
-        .slice(-5),
+      context: ctx,
     }),
   });
 
-  let data;
-
-  try {
-    data = await res.json();
-  } catch {
-    data = { answer: "⚠️ Failed to get response" };
-  }
+  const data: any = await res.json();
 
   await supabase.from("project_messages").insert([
     {
@@ -433,10 +405,6 @@ const sendMessage = async () => {
   ]);
 
   await streamText(data.answer);
-if (!ctx) {
-  alert("Please analyze a repo first");
-  return;
-}
 };
 
 // NEW CHAT
@@ -623,7 +591,7 @@ code: ({ node, inline, className, children, ...props }: any) => {
 onKeyDown={(e) => {
   if (e.key === "Enter" && !loading) {
     e.preventDefault();
-    sendMessage(); 
+    handleAnalyze();
   }
 }}
               value={input}

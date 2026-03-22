@@ -18,7 +18,14 @@ const repo = parts[1];
     // 🔥 Pick important files
 const importantFiles = (repoData.files || [])
   .filter((f: string) =>
-    (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".js")) &&
+    (
+  f.endsWith(".ts") ||
+  f.endsWith(".tsx") ||
+  f.endsWith(".js") ||
+  f.endsWith(".py") ||
+  f.endsWith(".java") ||
+  f.endsWith(".cpp")
+) &&
     !f.includes("node_modules") &&
     !f.includes(".next")
   )
@@ -32,18 +39,26 @@ const importantFiles = (repoData.files || [])
 
 for (const file of importantFiles) {
   try {
-    let res = await fetch(
-      `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`
-    );
+    console.log("USING BRANCH:", branch);
+let res = await fetch(
+  `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`
+);
 
-    // fallback to master
-    if (!res.ok) {
-      res = await fetch(
-        `https://raw.githubusercontent.com/${owner}/${repo}/master/${file}`
-      );
-    }
+if (!res.ok) {
+  res = await fetch(
+    `https://raw.githubusercontent.com/${owner}/${repo}/main/${file}`
+  );
+}
 
-    if (!res.ok) continue;
+if (!res.ok) {
+  res = await fetch(
+    `https://raw.githubusercontent.com/${owner}/${repo}/master/${file}`
+  );
+}
+
+console.log("FETCH:", file, res.status);
+
+if (!res.ok) continue;
 
     const text = await res.text();
 
