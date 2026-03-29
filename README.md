@@ -8,7 +8,9 @@ AI-powered SaaS that analyzes GitHub repositories and generates structured expla
 
 <br>
 
-
+<div align="center">
+<img src="./madara.gif" width="500"/>
+</div>
 
 <img src="https://readme-typing-svg.herokuapp.com?size=22&duration=3000&color=00C2FF&center=true&vCenter=true&width=600&lines=Analyze+Repos+Instantly;Understand+Architecture+Fast;AI+for+Developers;Codebase+Clarity+in+Seconds" />
 
