@@ -57,12 +57,7 @@ Instead of reading thousands of lines of code manually, StackLens:
 
 ---
 
-## ❌ What this is NOT
 
-* Not a website builder
-* Not a code generator
-
----
 
 ## ✅ What this IS
 
