@@ -58,7 +58,6 @@ Instead of reading thousands of lines of code manually, StackLens:
 ---
 
 
-
 ## ✅ What this IS
 
 > 🧠 **AI-powered codebase understanding platform**
